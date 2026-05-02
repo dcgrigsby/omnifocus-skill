@@ -1,0 +1,65 @@
+{
+  "skill_name": "omnifocus",
+  "evals": [
+    {
+      "id": 0,
+      "name": "inbox_listing",
+      "prompt": "What's in my OmniFocus inbox?",
+      "expected_output": "A clear listing of inbox tasks with their names and any notable metadata (flag, due date)."
+    },
+    {
+      "id": 1,
+      "name": "overdue",
+      "prompt": "What's overdue in OmniFocus?",
+      "expected_output": "Tasks whose effective due date has passed and are not completed; ideally with project context."
+    },
+    {
+      "id": 2,
+      "name": "flagged",
+      "prompt": "Show me everything flagged in OmniFocus that I haven't finished.",
+      "expected_output": "Flagged, incomplete tasks with project context."
+    },
+    {
+      "id": 3,
+      "name": "today_agenda",
+      "prompt": "What's on my plate today in OmniFocus?",
+      "expected_output": "Forecast/today-style answer combining due-today, deferred-to-today (or available-today), and overdue carry-over."
+    },
+    {
+      "id": 4,
+      "name": "retrospective_week",
+      "prompt": "What did I complete in OmniFocus over the last 7 days? Group by project.",
+      "expected_output": "Completed-in-window listing grouped by containing project."
+    },
+    {
+      "id": 5,
+      "name": "decision_support",
+      "prompt": "I have about an hour. Looking at my OmniFocus, what should I work on next? Pick one thing and explain why.",
+      "expected_output": "A single recommendation with reasoning grounded in OmniFocus state (due dates, flags, project, tags)."
+    },
+    {
+      "id": 6,
+      "name": "stale_review",
+      "prompt": "Which of my OmniFocus projects haven't been reviewed in a while and might need attention?",
+      "expected_output": "Projects sorted/filtered by nextReviewDate or lastReviewDate (skill explicitly calls these out)."
+    },
+    {
+      "id": 7,
+      "name": "capture_simple",
+      "prompt": "Add a task to my OmniFocus inbox called 'SKILLTEST_prep slides for Tuesday meeting'. Flag it and set the due date to next Tuesday at 3pm.",
+      "expected_output": "Created task in inbox with the exact name, flagged=true, due date set to the upcoming Tuesday at 15:00."
+    },
+    {
+      "id": 8,
+      "name": "planning_project",
+      "prompt": "Set up an OmniFocus project called 'SKILLTEST_Oregon coast trip' for a weekend trip planning. Break it down into the typical tasks for a coastal weekend (lodging, route, packing, food, etc.) — use your judgment for the breakdown.",
+      "expected_output": "A new project with that exact name containing several sensible tasks."
+    },
+    {
+      "id": 9,
+      "name": "modify_existing",
+      "prompt": "I have a task in my OmniFocus inbox named exactly 'SKILLTEST_seed task to modify'. Find it, rename it to 'SKILLTEST_seed task — renamed', set it flagged, set its due date to this Friday at 5pm, and add a tag named 'SKILLTEST_tag' (creating the tag if needed).",
+      "expected_output": "The seed task has the new name, is flagged, has due date set to upcoming Friday 17:00, and bears the SKILLTEST_tag tag."
+    }
+  ]
+}

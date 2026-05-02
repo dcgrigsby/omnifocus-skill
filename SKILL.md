@@ -214,9 +214,15 @@ Always read the cheatsheet first. Only load other files when you need details be
 
 ```bash
 scripts/eval.sh <<'EOF'
-JSON.stringify(inbox.map(t => ({ name: t.name, id: t.id.primaryKey, flagged: t.flagged })))
+JSON.stringify(
+  inbox
+    .filter(t => !t.effectivelyCompleted && !t.effectivelyDropped)
+    .map(t => ({ name: t.name, id: t.id.primaryKey, flagged: t.flagged }))
+)
 EOF
 ```
+
+The `inbox` accessor returns tasks that have *ever* been captured to inbox — including completed and dropped ones that haven't been processed out. When the user asks "what's in my inbox?" they almost always mean live items, so filter with `!t.effectivelyCompleted && !t.effectivelyDropped`. Same applies anywhere you read from `inbox`.
 
 ### List all projects
 
