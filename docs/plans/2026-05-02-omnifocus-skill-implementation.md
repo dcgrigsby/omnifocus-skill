@@ -46,11 +46,13 @@ Source files for the API reference docs are in `~/omnifocal/docs/omnifocus-api/`
 mkdir -p /Users/dan/omnifocus-skill/scripts
 ```
 
+**Important implementation note:** `osascript -l JavaScript` runs in JXA (JavaScript for Automation) mode, which does NOT expose the Omni Automation globals (`flattenedTasks`, `inbox`, etc.). To reach the Omni Automation API, the wrapper bridges through AppleScript's `tell application "OmniFocus" to evaluate javascript "..."`, which runs the JS inside OmniFocus's own scripting engine. This matches the approach used by the predecessor `omnifocal-server` (see `~/omnifocal/cmd/omnifocal-server/main.go`).
+
 Write `/Users/dan/omnifocus-skill/scripts/eval.sh` with this exact content:
 
 ```bash
 #!/usr/bin/env bash
-# eval.sh — pipe JavaScript (Omni Automation) to osascript against OmniFocus.
+# eval.sh — pipe JavaScript (Omni Automation) to OmniFocus via osascript.
 #
 # Usage:
 #   scripts/eval.sh                  # read JS from stdin
@@ -60,7 +62,12 @@ Write `/Users/dan/omnifocus-skill/scripts/eval.sh` with this exact content:
 #   0       success
 #   2       usage error (bad args, file not found)
 #   3       OmniFocus is not running
-#   other   osascript error (passed through)
+#   other   osascript / Omni Automation error (passed through)
+#
+# Implementation note: osascript's -l JavaScript mode is JXA, which does NOT
+# expose Omni Automation globals (flattenedTasks, inbox, etc.). To reach the
+# Omni Automation API we bridge through AppleScript's `evaluate javascript`,
+# which runs the JS inside OmniFocus's own scripting engine.
 
 set -euo pipefail
 
@@ -84,8 +91,14 @@ if ! pgrep -x OmniFocus >/dev/null 2>&1; then
   exit 3
 fi
 
-# Pipe JS to osascript. Stdout = result; stderr = osascript errors.
-exec osascript -l JavaScript <<<"$src"
+# Escape JS for embedding in an AppleScript string literal.
+# Order matters: backslashes first, then double quotes, then newlines.
+escaped=${src//\\/\\\\}
+escaped=${escaped//\"/\\\"}
+escaped=${escaped//$'\n'/\\n}
+
+# Bridge to Omni Automation via AppleScript's `evaluate javascript`.
+exec osascript -e "tell application \"OmniFocus\" to evaluate javascript \"$escaped\""
 ```
 
 - [ ] **Step 2: Make the script executable**
