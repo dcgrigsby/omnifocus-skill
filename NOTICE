@@ -1,0 +1,36 @@
+omnifocus-skill
+Copyright 2026 Dan Grigsby
+
+CRITICAL SAFETY WARNING — PLEASE READ BEFORE USE
+
+This skill gives an AI agent (Claude or any skill-aware assistant) the
+ability to execute arbitrary JavaScript against your local OmniFocus
+database with full read/write privileges via macOS osascript. There is
+NO sandboxing and NO per-call confirmation — the only safeguards are
+instructions in the skill telling the agent to confirm destructive
+actions before performing them, which is enforcement by convention,
+not by mechanism.
+
+Potential consequences of misuse include but are not limited to:
+- Permanent deletion of tasks, projects, folders, and tags
+- Silent or bulk modification or corruption of OmniFocus data
+- Loss of historical completion records, notes, and tags
+- No undo for destructive operations
+
+Risks specific to AI-driven use:
+- An agent may misinterpret a request and run a destructive query
+- A prompt-injection payload reaching the agent (via task notes,
+  pasted content, or external context) could direct it to delete or
+  modify data
+- A buggy or hallucinated query may produce unintended writes
+
+By using this software, you acknowledge that:
+1. You understand the risks described above
+2. You accept full responsibility for any data loss or damage
+3. You will back up your OmniFocus database before granting an agent
+   access through this skill
+4. The authors and contributors provide NO WARRANTY of any kind
+5. The authors and contributors accept NO LIABILITY for any damages
+
+This notice must be preserved in all copies or substantial portions
+of the software, per the Apache License, Version 2.0.
