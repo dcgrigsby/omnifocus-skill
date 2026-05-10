@@ -112,7 +112,7 @@ Use this when:
 |---|---|
 | 0 | Success — JSON result on stdout |
 | 2 | Usage error (bad args or file not found) — see stderr |
-| 3 | OmniFocus is not running. **Surface this to the user** — do not attempt to launch it. |
+| 3 | OmniFocus could not be launched or did not become responsive. The wrapper auto-launches OmniFocus when it isn't already running, so this code only fires on a real failure (e.g., app missing, GUI unavailable). Surface it to the user. |
 | other | osascript / Omni Automation error (e.g., JS syntax error, reference error) — see stderr for details |
 
 On any non-zero exit, read stderr to diagnose.
@@ -396,5 +396,5 @@ EOF
 - **Check for null:** many properties can be null (`dueDate`, `deferDate`, `containingProject`, etc.). Always check before calling methods on them.
 - **Date formatting:** use `.toISOString()` on `Date` objects for consistent JSON serialization.
 - **Tag and project lookup:** use `tagNamed("x")` / `projectNamed("x")` for exact match (returns the object or null); use `tagsMatching("x")` / `projectsMatching("x")` for substring match (returns an array).
-- **Error handling:** on non-zero exit from `scripts/eval.sh`, read stderr. Exit code 3 means OmniFocus isn't running — surface that to the user, don't try to work around it. Other non-zero codes typically mean a JS error in your query.
+- **Error handling:** on non-zero exit from `scripts/eval.sh`, read stderr. Exit code 3 means OmniFocus could not be launched or did not become responsive — surface that to the user, don't try to work around it. The wrapper auto-launches OmniFocus when it isn't running, so first invocations after a reboot may take an extra second or two. Other non-zero codes typically mean a JS error in your query.
 - **Identifying tasks reliably:** when modifying tasks, prefer matching by `id.primaryKey` if you have it. Matching by `name` can match the wrong task if names aren't unique.

@@ -8,7 +8,7 @@
 # Exit codes:
 #   0       success
 #   2       usage error (bad args, file not found)
-#   3       OmniFocus is not running
+#   3       OmniFocus could not be launched or did not become responsive
 #   other   osascript / Omni Automation error (passed through)
 #
 # Implementation note: osascript's -l JavaScript mode is JXA, which does NOT
@@ -32,10 +32,25 @@ else
   exit 2
 fi
 
-# Verify OmniFocus is running. Do not auto-launch.
+# Ensure OmniFocus is running. Launch in the background (no focus steal) and
+# wait for the Omni Automation engine to become responsive before proceeding.
 if ! pgrep -x OmniFocus >/dev/null 2>&1; then
-  echo "eval.sh: OmniFocus is not running. Launch it and retry." >&2
-  exit 3
+  open -ga OmniFocus || {
+    echo "eval.sh: failed to launch OmniFocus (open -ga returned non-zero)." >&2
+    exit 3
+  }
+  ready=0
+  for _ in $(seq 1 60); do
+    if osascript -e 'tell application "OmniFocus" to evaluate javascript "1"' >/dev/null 2>&1; then
+      ready=1
+      break
+    fi
+    sleep 0.5
+  done
+  if [[ $ready -ne 1 ]]; then
+    echo "eval.sh: OmniFocus launched but did not become responsive within 30s." >&2
+    exit 3
+  fi
 fi
 
 # Escape JS for embedding in an AppleScript string literal.
