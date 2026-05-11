@@ -100,8 +100,19 @@ The quoted delimiter `<<'EOF'` is required — it prevents shell expansion of `$
 ```bash
 # Write the query to a temp file
 cat > /tmp/of-query.js <<'EOF'
-var p = projectNamed("Q2 Planning");
-JSON.stringify(p ? p.flattenedTasks.map(t => ({ name: t.name, status: t.taskStatus.name })) : null)
+function taskStatusName(t) {
+  var s = t.taskStatus;
+  if (s === Task.Status.Available) return "Available";
+  if (s === Task.Status.Blocked) return "Blocked";
+  if (s === Task.Status.Next) return "Next";
+  if (s === Task.Status.Completed) return "Completed";
+  if (s === Task.Status.Dropped) return "Dropped";
+  if (s === Task.Status.DueSoon) return "DueSoon";
+  if (s === Task.Status.Overdue) return "Overdue";
+  return "Unknown";
+}
+var p = flattenedProjects.find(p => p.name === "Q2 Planning");
+JSON.stringify(p ? p.flattenedTasks.map(t => ({ name: t.name, status: taskStatusName(t) })) : null)
 EOF
 
 # Execute
@@ -171,7 +182,7 @@ Key points:
 | Accessor | Returns | Description |
 |---|---|---|
 | `inbox` | TaskArray | Inbox tasks |
-| `flattenedTasks` | TaskArray | All tasks (flattened hierarchy) |
+| `flattenedTasks` | TaskArray | All tasks (flattened hierarchy) — **also contains a phantom entry per project**; see Gotchas below |
 | `flattenedProjects` | ProjectArray | All projects |
 | `flattenedFolders` | FolderArray | All folders |
 | `flattenedTags` | TagArray | All tags |
@@ -182,12 +193,23 @@ Key points:
 
 ### Lookup by name
 
-| Method | Returns |
-|---|---|
-| `projectNamed("name")` | Project or null |
-| `folderNamed("name")` | Folder or null |
-| `tagNamed("name")` | Tag or null |
-| `taskNamed("name")` | Task or null |
+| Method | Returns | Scope |
+|---|---|---|
+| `projectNamed("name")` | Project or null | **Top-level only** — does not recurse into folders |
+| `folderNamed("name")` | Folder or null | **Top-level only** — does not recurse |
+| `tagNamed("name")` | Tag or null | **Top-level only** — does not recurse into parent tags |
+| `taskNamed("name")` | Task or null | **Top-level only** — does not search inside projects |
+
+The built-in `*Named` helpers only check direct children of the database root (or of the receiver when called on a Folder/Tag/Task). For projects/tags/folders nested deeper, they silently return `null`. **Prefer the reliable patterns below for arbitrary lookups:**
+
+```javascript
+var proj = flattenedProjects.find(p => p.name === "My Project");
+var tag  = flattenedTags.find(tg => tg.name === "urgent");
+var folder = flattenedFolders.find(f => f.name === "Areas");
+var task = flattenedTasks.find(t => t.name === "Buy groceries");
+```
+
+These walk the entire flattened hierarchy and find matches regardless of nesting.
 
 ### Search (substring match)
 
@@ -232,3 +254,9 @@ Don't reinvent the invocation when one of these is what's needed — load the pa
 - **Tag and project lookup:** use `tagNamed("x")` / `projectNamed("x")` for exact match (returns the object or null); use `tagsMatching("x")` / `projectsMatching("x")` for substring match (returns an array).
 - **Error handling:** on non-zero exit from `scripts/eval.sh`, read stderr. Exit code 3 means OmniFocus could not be launched or did not become responsive — surface that to the user, don't try to work around it. The wrapper auto-launches OmniFocus when it isn't running, so first invocations after a reboot may take an extra second or two. Other non-zero codes typically mean a JS error in your query.
 - **Identifying tasks reliably:** when modifying tasks, prefer matching by `id.primaryKey` if you have it. Matching by `name` can match the wrong task if names aren't unique.
+
+## Gotchas
+
+- **`flattenedTasks` contains phantom project-root entries.** Every project surfaces as a "task" inside `flattenedTasks` (and inside `tag.tasks` if the project itself is tagged) with `id.primaryKey === containingProject.id.primaryKey`. These inherit a `taskStatus` (typically `Blocked` while any child of the project is incomplete) and will silently pollute counts, filters, and name lookups. Filter them out: `t.containingProject != null && t.id.primaryKey === t.containingProject.id.primaryKey`. The scoped accessors `proj.flattenedTasks` and `proj.tasks` are clean and don't need the filter.
+- **`.name` is `undefined` on `Task.Status` and `Project.Status` enum members.** Writing `t.taskStatus.name` or `p.status.name` causes `JSON.stringify` to drop the field. Compare by identity (`s === Task.Status.Available`) and map to a string yourself. See `references/query-patterns.md` for canonical helpers.
+- **`projectNamed` / `tagNamed` / `folderNamed` / `taskNamed` do not recurse.** They only find items at the top level (direct children of the database root). For anything nested in a folder, parent tag, or project, they silently return `null`. Use `flattenedProjects.find(p => p.name === "...")` (and equivalents for tags/folders/tasks) for reliable lookups regardless of nesting.
